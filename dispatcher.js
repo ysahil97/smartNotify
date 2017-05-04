@@ -9,7 +9,7 @@ var time = require('time');
 
 var app = express();
 
-
+//helper function to determine which among the two timestamps is the earliest
 var compareTimestamp = function(s,t){
   if (parseInt(s.slice(0,4)) > parseInt(t.slice(0,4))){
         return -1;
@@ -50,6 +50,7 @@ var compareTimestamp = function(s,t){
   }
 };
 
+// helper function to modify a timestamp 24 hours before
 var change24Before = function(s){
   var p1 = s.slice(0,10);
   var p2 =s.slice(10);
@@ -90,7 +91,7 @@ var change24Before = function(s){
 
 };
 
-
+//function to check for each notification clicked and insert it if it has been clicked in the last 24 hours
 var updateCollection = function(db, callback) {
   db.collection('testNotify').find().each(function(err, doc){
     if (err) throw err;
@@ -116,6 +117,7 @@ var updateCollection = function(db, callback) {
   });
 };
 
+//function to check the number of times user has clicked notifications in the last 24 hours. result is stored in the database
 var makeUserCount = function(db, callback) {
   db.collection('userAssign1').find().each(function(err, doc){
     if(doc!=null){
@@ -164,6 +166,8 @@ app.use(express.static(publicdir));
 /*app.use('/static', express.static('public'));*/
 app.use(express.static(__dirname + '/'));
 
+
+//server is started and the dispatcher is scheduled to run every midnight
 app.post('/', function(req, res){
 
 var today = new Date();

@@ -9,9 +9,10 @@ var time = require('time');
 
 var app = express();
 
-// app.set('view engine', 'ejs');
+//variable to define maxLimit of user notifications clicked
 var maxLimit = 5;
 
+//helper function to access parts of date string
 var dateToObject = function(s){
   var dateObject = new Object();
   dateObject.year = parseInt(s.splice(0,4));
@@ -23,15 +24,15 @@ var dateToObject = function(s){
   return dateObject;
 }
 
+//function which schedules immediately to send notifications
 var scheduleImm = function(db,object,callback){
   db.collection('userCount').find().each(function(err, doc){
     if (err) throw err;
     if (doc!=null){
       var today = new Date();
-      // var j = schedule.scheduleJob(today,function(){
-        // sendNotification(object,doc.user_name);
+
         console.log("Notification sent immediately to all users");
-      // });
+
     }
     else{
       callback();
@@ -39,23 +40,25 @@ var scheduleImm = function(db,object,callback){
 });
 }
 
+//function which schedules intelligently to send notifications
 var scheduleIntelligent = function (db,object,callback){
   db.collection('userCount').find().each(function(err, doc){
     if (err) throw err;
     if (doc!=null){
+      //if the user has clicked maximum number of times
       if(doc.count >= maxLimit){
         var today = new Date();
         var tomorrow = new Date();
         tomorrow.setDate(today.getDate()+1);
-
+        //schedule sending notification 24 hours from now
         var j = schedule.scheduleJob(tommorow,function(){
-          // sendNotification(object,doc.user_name);
           console.log("Notification sent 24 hrs from now to all users");
         });
 
       }
       else{
         var morning=0, afternoon=0, evening=0;
+        //check over the database to search for likeliest available time window
         db.collection('userAssign1').find({user_name: doc.user_name}).each(function(err,doc){
           if (err) throw err;
           if (doc!=null){
@@ -70,19 +73,18 @@ var scheduleIntelligent = function (db,object,callback){
         });
         var today = new Date();
         var dateObject = today.toISOString().
-        replace(/T/, ' ').      // replace T with a space
+        replace(/T/, ' ').      
         replace(/\..+/, '').hour
+        //according to the time window selected, send the notification at its median time
         if(morning > afternoon && morning > evening && dateObject.hour <= 10){
           var scheduleDate = new Date(dateObject.year,dateObject.month-1,dateObject.day,10,0,0)
           var j = schedule.scheduleJob(scheduleDate,function(){
-            // sendNotification(object,doc.user_name);
             console.log("Notification sent intelligently to all users");
           });
         }
         else if (afternoon > morning && afternoon > evening && dateObject.hour <= 14) {
           var scheduleDate = new Date(dateObject.year,dateObject.month-1,dateObject.day,14,0,0)
           var j = schedule.scheduleJob(scheduleDate,function(){
-            // sendNotification(object,doc.user_name);
             console.log("Notification sent intelligentlyto all users");
           });
         }
@@ -92,9 +94,9 @@ var scheduleIntelligent = function (db,object,callback){
             sendNotification(object,doc.user_name);
           });
         }
+        // if none of the time windows are available, send it immediately
         else{
           var j = schedule.scheduleJob(today,function(){
-            // sendNotification(object,doc.user_name);
             console.log("Notification sent immediately and intelligently to all users");
           });
         }
@@ -136,25 +138,14 @@ var findRestaurants1 = function(db, callback) {
    });
 };
 
-app.use(express.static(__dirname + '/'));
+// app.use(express.static(__dirname + '/'));
 
-// app.use(express.static(publicdir));
-/*app.use('/static', express.static('public'));*/
+app.use(express.static(publicdir));
+
 app.use(express.static(__dirname + '/'));
 
 
 app.get('/', function(req, res){
-  // The form's action is '/' and its method is 'POST',
-  // so the `app.post('/', ...` route will receive the
-  // result of our form
-  /*var html = '<form action="/" method="post">' +
-               'Enter your name:' +
-               '<input type="text" name="userName" placeholder="..." />' +
-               '<br>' +
-               '<button type="submit">Submit</button>' +
-            '</form>';
-
-  res.send(html);*/
 
   fs.readFile('cutshortTestForm.html', function (err, data) {
         res.writeHead(200, {
@@ -163,22 +154,16 @@ app.get('/', function(req, res){
         });
         res.write(data);
         res.end();
-    });/*
-fs.readFile('studentForm.css', function (err, data) {
-        if (err) console.log(err);
-        res.writeHead(200, {'Content-Type': 'text/css'});
-        res.write(data);
-        res.end();
-      });*/
+    });
 });
 
 
+//when the server receives data for post, it schedules accordingly
 app.post('/cutshortTestForm.html', function(req, res){
   var text = req.body.nText;
   var priority = req.body.nPriority;
   var url = 'mongodb://localhost:27017/test';
   MongoClient.connect(url, function(err, db) {
-  /*assert.equal(null, err);*/
   console.log("Connected correctly to server.");
   if(priority == 1){
     scheduleImm(db,text,function(){
@@ -194,13 +179,7 @@ app.post('/cutshortTestForm.html', function(req, res){
       });
     });
   }
-
-//   insertDocument(db, function() {
-//     findRestaurants(db, function() {
-//     db.close();
-// });
-//   },speaker);
 });
-
 });
+// the app will forever listen to this server
 app.listen(8080);
