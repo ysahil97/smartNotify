@@ -1,0 +1,11 @@
+{
+  "name": "smart-notify",
+  "version": "1.0.0",
+  "description": "A backend API for smart notifications",
+  "main": "dispatcher.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
